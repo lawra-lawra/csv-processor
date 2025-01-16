@@ -12,6 +12,11 @@ class CsvController extends Controller
         }
 
         $file = $request->file('file');
+        if (! $file) {
+            session()->flash('error', 'Please select a file to upload');
+
+            return redirect('/');
+        }
 
         try {
             $contents = fopen($file->getRealPath(), 'r');

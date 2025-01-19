@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Person;
 use Illuminate\Http\Request;
 
 class CsvController extends Controller
@@ -35,50 +36,38 @@ class CsvController extends Controller
 
         $people = [];
         foreach ($csvData as $row) {
-            $name = reset($row);
-            $name = trim($name);
-            $name = explode(' ', $name);
+            // DEVTODO Put this logic into the Person model
+            $row = reset($row);
+            $row = trim($row);
+            $row = explode(' ', $row);
 
-            $hasMultiple = array_intersect(['&', 'and'], $name);
+            // Find where 'and' or '&' are
+            $hasMultiple = array_intersect(['&', 'and'], $row);
+            // Does not have multiple people - no matches of 'and' or '&'
             if ($hasMultiple === []) {
-                $people[] = $this->processName($name);
+                $person = new Person($row);
+                $people[] = $person->toArray();
 
                 continue;
             }
 
             $key = key($hasMultiple);
             // Everything before the 'and' or '&'
-            $firstName = array_slice($name, 0, $key);
+            $firstName = array_slice($row, 0, $key);
             // Everything after the 'and' or '&'
-            $secondName = array_slice($name, $key);
+            $secondName = array_slice($row, $key);
             array_shift($secondName);
-            $people[] = $this->processName($secondName);
+            $person1 = new Person($secondName);
+            $people[] = $person1->toArray();
 
             array_shift($secondName);
             $firstName = array_merge($firstName, $secondName);
-            $people[] = $this->processName($firstName);
+            $person2 = new Person($firstName);
+            $people[] = $person2->toArray();
         }
 
         $people = array_filter($people);
 
         return view('csv')->with('people', $people);
-    }
-
-    private function processName(array $name)
-    {
-        // Title and surname are required, if the array has less than 2
-        // values don't include it
-        if (count($name) < 2) {
-            return null;
-        }
-
-        return [
-            'title' => $name[0],
-            'first_name' => $name[1],
-            // If we have at least 3 names, include an initial
-            'initial' => count($name) > 3 ? $name[2] : null,
-            // We may have 3 or 4 names, use the last as the surname
-            'last_name' => end($name),
-        ];
     }
 }

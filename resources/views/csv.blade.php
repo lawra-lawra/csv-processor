@@ -22,6 +22,6 @@
     </form>
 
     @if (! empty($people))
-        @dump($people)
+        <pre>{{ print_r($people) }}</pre>
     @endif
 </body>
